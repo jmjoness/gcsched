@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body onload="init()">
+	<div id="page">
+		<div id="header">
+			<h2>Schedule 2023</h2>
+			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
+		</div>
+		<div id="content">
+			<div id="sched-date">
+				<div id="date-div">
+					<label for="avail-date">Date:</label>
+					<input type="button" id="prev-date" class="time-button" value= "<" onclick="dateBtnClick(-1)">
+					<select name="avail-date" id="avail-date" onchange="dateChange()"></select>
+					<input type="button" id="next-date" class="time-button" value= ">" onclick="dateBtnClick(1)">
+				</div>
+			</div>
+			<div id="sched-times">
+				<table id="times-tbl">
+
+				</table>
+			</div>
+			<div id="sched-input">
+				<div id="name-div">
+					<label for="first-name">Name:</label>
+					<input type="text" name="first-name" id="first-name" >
+					<input type="text" name="last-name" id="last-name" >
+				</div>
+				<div id="buttons-div">
+					<input type="button" id="submit-button" class="end-button" onclick="reserveTime()" value="Reserve">
+					<input type="button" id="del-button" class="end-button" onclick="deleteReservation()" value="Delete">
+					<input type="button" class="end-button" onclick="cancel()" value="Clear">
+				</div>
+			</div>
+		</div>
+	</div>
+
+</html>
+
+<script src="/static/names.js"></script>
+<script >
+	const dateField = document.getElementById("sched-date");
+	const pilotSel = document.getElementById("pilot");
+	const startSel = document.getElementById("start-sel");
+	const durationSel = document.getElementById("duration-sel");
+	const subButton = document.getElementById("submit-button");
+	const deleteButton = document.getElementById("del-button");
+
+	//const pilotList = ["Anders", "Carsten", "Eric", "Jason", "Jim", "Landon", "Maintenance", "Trevor", "Tyler"];
+	let idReservationMap = new Map();
+	let idSvgBlockMap = new Map();
+	let idSvgNameMap = new Map();
+	let selectedReservationId = 0;
+
+
+	function init() {
+		deleteButton.style.display = "none";
+		let date = new Date();
+		const today = date.toISOString().substring(0, 10);
+		dateField.value = today;
+
+		for (let p of pilotList) {
+			const opt = document.createElement('option');
+			opt.text = p;
+			opt.value = p;
+			pilotSel.add(opt);
+		}
+		pilotSel.selectedIndex = -1;
+
+		startSel.selectedIndex = 0;
+		durationSel.value = "60";
+
+		const svg = document.getElementById('sched-svg');
+		svg.addEventListener("click", timeClick);
+
+		dateChange();
+		checkReady();
+	}
+
+	function goHome() {
+		window.location = "{{ url_for('.index') }}"
+	}
+
+	function timeClick(event) {
+		const svgRect = document.getElementById("sched-svg");
+		const pt = svgRect.createSVGPoint();
+		pt.x = event.clientX;
+		pt.y = event.clientY;
+		const svgP = pt.matrixTransform(svgRect.getScreenCTM().inverse());
+		const startTime = Math.floor(svgP.y / 30) * 30;
+		let found = false;
+		for (let [key, value] of idReservationMap) {
+			if ((value.time <= startTime) && (value.time + value.duration > startTime)) {
+				selectedReservationId = key;
+				drawSelectBlock(value.time, value.duration);
+
+				subButton.value = "Modify";
+				pilotSel.value = value.pilot;
+				startSel.value = value.time;
+				durationSel.value = value.duration;
+				deleteButton.style.display = "block";
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			subButton.value = "Reserve";
+			deleteButton.style.display = "none";
+			const duration = parseInt(durationSel.value);
+			drawResBlock(startTime, duration);
+			startSel.value = startTime;
+			const start = parseInt(startSel.value);
+			if (checkInterference(start, duration)) {
+				subButton.style.display = "none";
+			} else {
+				subButton.style.display = "block";
+				checkReady();
+			}
+		}
+	}
+
+
+	function drawTimeBlock(id) {
+		const r = idReservationMap.get(id);
+		let timeBlock = document.createElementNS("http://www.w3.org/2000/svg","rect");
+		timeBlock.setAttribute("fill", "red");
+		timeBlock.setAttribute("width", "300");
+		const durStr = r.duration.toString();
+		timeBlock.setAttribute("height", durStr);
+		timeBlock.setAttribute("x", "200");
+		const yStr = r.time.toString();
+		timeBlock.setAttribute("y", yStr);
+		timeBlock.setAttribute("fill-opacity", "50%");
+		const svg = document.getElementById("sched-svg");
+		svg.appendChild(timeBlock);
+		idSvgBlockMap.set(id, timeBlock);
+		let name = document.createElementNS("http://www.w3.org/2000/svg","text");
+		name.setAttribute("x", "250");
+		const ytextStr = (r.time + 25).toString();
+		name.setAttribute("y", ytextStr);
+		name.setAttribute("fill", "black");
+		name.setAttribute("class", "sched-name");
+		const textNode = document.createTextNode(r.pilot);
+		name.appendChild(textNode);
+		svg.appendChild(name);
+		idSvgNameMap.set(id, name);
+	
+	}
+
+	function drawSelectBlock(startMinutes, duration) {
+		highlightBlock(startMinutes, duration, "blue");
+	}
+
+	function drawResBlock(startMinutes, duration) {
+		highlightBlock(startMinutes, duration, "yellow");
+	}
+
+	function checkReady() {
+		if ((pilotSel.value != "") && (startSel.value != "-1")) {
+			subButton.style.display = "block";
+		} else {
+			subButton.style.display = "none";
+		}
+	}
+
+	function checkInterference(start, duration) {
+		const end = start + duration;
+		let found = false;
+		for (let v of idReservationMap.values()) {
+			const rStart = v.time;
+			const rEnd = v.time + v.duration;
+			if (((rStart >= start) && (rStart < end)) || 
+				 ((rEnd >= start) && (rEnd < end))) {
+				found = true;
+				break;
+			}
+		}
+
+		return found;
+	}
+
+	let tempBlock = null;
+
+	function highlightBlock(startMinutes, duration, color) {
+		if (tempBlock != null) {
+			const parent = tempBlock.parentNode;
+			parent.removeChild(tempBlock);
+		}
+
+		tempBlock = document.createElementNS("http://www.w3.org/2000/svg","rect");
+		tempBlock.setAttribute("fill", "yellow");
+		tempBlock.setAttribute("width", "300");
+		const durStr = duration.toString();
+		tempBlock.setAttribute("height", durStr);
+		tempBlock.setAttribute("x", "200");
+		const yStr = startMinutes.toString();
+		tempBlock.setAttribute("y", yStr);
+		tempBlock.setAttribute("fill-opacity", "50%");
+		const svg = document.getElementById("sched-svg");
+		svg.appendChild(tempBlock);
+	}
+
+	function dateBtnClick(inc) {
+		let d = new Date(dateField.value);
+		d.setDate(d.getDate() + inc);
+		dateField.value = d.toISOString(true).substring(0, 10);
+		dateChange();
+	}
+
+	function dateChange() {
+		idReservationMap.clear();
+
+		const date = new Date(dateField.value);
+		const dateStr = date.toISOString(true).substring(0, 10);
+
+		let url = "{{ url_for('.getreservations', date='dateTag') }}";
+		url = url.replace('dateTag', dateStr);
+
+		fetch(url)
+		.then(resp => {
+			if (resp.ok) {
+				return resp.json()
+			} else {
+				alert("Failed to get reservations")
+			}
+		})
+		.then(json => {
+			idReservationMap.clear();
+			for (let r of json.results) {
+				const info = {date: r.date, time: r.time, duration: r.duration, pilot: r.pilot, note: r.note};
+				idReservationMap.set(r.id, info);
+			}
+			showBlocks();
+		})
+		.catch(err => {
+			alert("Failed to get reservations: ", err);
+		});
+	}
+
+	function showBlocks() {
+		for (let v of idSvgBlockMap.values()) {
+			const parent = v.parentNode;
+			parent.removeChild(v);
+		}
+		idSvgBlockMap.clear();
+
+		for (let v of idSvgNameMap.values()) {
+			const parent = v.parentNode;
+			parent.removeChild(v);
+		}
+		idSvgNameMap.clear();
+
+		for (let id of idReservationMap.keys()) {
+			drawTimeBlock(id);
+		}
+	}
+
+	function clearBlock(id) {
+		const block = idSvgBlockMap.get(id);
+		const parent = block.parentNode;
+		parent.removeChild(block);
+		const name = idSvgNameMap.get(id);
+		parent.removeChild(name);
+	}
+
+	function timeChange() {
+		const start = startSel.value;
+		const duration = durationSel.value;
+		drawResBlock(start, duration);
+		checkReady();
+	}
+
+	function pilotChange() {
+		checkReady();
+	}
+	function cancel() {
+		if (tempBlock != null) {
+			const parent = tempBlock.parentNode;
+			parent.removeChild(tempBlock);
+		}
+
+		pilotSel.selectedIndex = -1;
+		startSel.selectedIndex = 0;
+		durationSel.selectedIndex = 1;
+		tempBlock = null;
+
+		subButton.value = "Reserve";
+		deleteButton.style.display = "none";
+		selectedReservationId = 0;
+
+		showBlocks();
+	}
+
+	function reserveTime() {
+		let d = new Date(dateField.value);
+		let date = d.toISOString(true).substring(0, 10);
+		let pilot = pilotSel.value;
+		let time = parseInt(startSel.value);
+		let duration = parseInt(durationSel.value);
+
+		if (selectedReservationId) {
+			modReservation(selectedReservationId, date, pilot, time, duration);
+		} else {
+			addReservation(date, pilot, time, duration);
+		}
+	}
+	
+	function addReservation(date, pilot, time, duration) {
+		const jsonString = JSON.stringify({ resdate: date, restime: time, duration: duration, pilot: pilot, note: "" });
+		const url = "{{ url_for('.addreservation') }}";
+
+		fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: jsonString
+		})
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Add reservation failed");
+				return;
+			}
+
+			resp.json().then(json => {
+				const resId = json.id;
+				const info = {date: date, time: time, duration: duration, pilot: pilot, note: ""};
+				idReservationMap.set(resId, info);
+				drawTimeBlock(resId);
+				cancel();
+				checkReady();
+			})
+		})
+		.catch(err => {
+			alert("Add reservation failed: ", err);
+		});
+	}
+	
+	function modReservation(id, date, pilot, time, duration) {
+		const jsonString = JSON.stringify({ id: id, resdate: date, restime: time, duration: duration, pilot: pilot, note: "" });
+		const url = "{{ url_for('.modreservation') }}";
+
+		fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: jsonString
+		})
+		.then(resp => {
+			if (resp.ok) {
+				const info = {date: date, time: time, duration: duration, pilot: pilot, note: ""};
+				idReservationMap.set(id, info);
+				clearBlock(id);
+				drawTimeBlock(id);			
+				cancel();
+				checkReady();
+			} else {
+				alert("Mod reservation failed");
+			}
+		})
+		.catch(err => {
+			alert("Mod reservation failed: ", err);
+		});
+	}
+
+	function deleteReservation() {
+		let url = "{{ url_for('.delreservation', id='idTag') }}";
+		url = url.replace('idTag', selectedReservationId.toString());
+
+		fetch(url)
+		.then(resp => {
+			if (resp.ok) {
+				idReservationMap.delete(selectedReservationId);
+				cancel();
+			} else {
+				alert("Failed to delete reservation")
+			}
+		})
+		.catch(err => {
+			alert("Failed to delete reservation: ", err);
+		});
+	}
+
+</script>
