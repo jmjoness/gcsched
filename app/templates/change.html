@@ -3,7 +3,7 @@
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Reserve Time</title>
+	<title>Tithing Declaration</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
@@ -11,38 +11,37 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Schedule 2023</h2>
+			<h2>Change Reservation</h2>
 			<!-- <input type="button" id="home-button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Home"> -->
 		</div>
 		<div id="content">
 			<div class="instruction">
-				<p>To reserve a time for tithing declaration, select a date, and time, then enter your name and phone number.  
+				<p>Enter your name to bring up your reservation for tithing declaration.  Then you can select a different date, and time.  
 					Press Save to finish the reservaton.</p>
 				<p>Times with a gray background are already reserved. </p>
 			</div>
-			<div id="sched-div">
-				<div id="sched-input">
-					<label for="first-name">First Name:</label>
-					<input type="text" name="first-name" id="first-name" onblur="checkDone()">
-					<label for="last-name">Last Name:</label>
-					<input type="text" name="last-name" id="last-name" onblur="checkDone()">
-					<label for="phone">Telephone Number:</label>
-					<input type="text" name="phone" id="phone" onblur="checkDone()">
-					<div id="buttons-div">
-						<input type="button" id="submit-button" class="end-button" onclick="addReservation()" value="Save">
-						<input type="button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Cancel">
-					</div>
+			<div id="sched-input">
+				<label for="first-name">First Name:</label>
+				<input type="text" name="first-name" id="first-name" onblur="checkDone()">
+				<label for="last-name">Last Name:</label>
+				<input type="text" name="last-name" id="last-name" onblur="checkDone()">
+				<label for="phone">Telephone Number:</label>
+				<input type="text" name="phone" id="phone">
+				<div id="buttons-div">
+					<input type="button" id="submit-button" class="end-button" onclick="modReservation()" value="Save">
+					<input type="button" id="del-button" class="end-button" onclick="deleteReservation()" value="Delete">
+					<input type="button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Cancel">
 				</div>
-				<div id="sched-date">
-					<div id="date-div">
-						<label for="avail-date">Date:</label>
-						<select name="avail-date" id="avail-date" onchange="dateChange()"></select>
-					</div>
-					<div id="sched-times">
-						<table id="times-tbl">
+			</div>
+			<div id="sched-date">
+				<div id="date-div">
+					<label for="avail-date">Date:</label>
+					<select name="avail-date" id="avail-date" onchange="dateChange()"></select>
+				</div>
+				<div id="sched-times">
+					<table id="times-tbl">
 
-						</table>
-					</div>
+					</table>
 				</div>
 			</div>
 		</div>
@@ -53,14 +52,21 @@
 <script src="/static/cookie.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
+	const firstNameField = document.getElementById("first-name");
+	const lastNameField = document.getElementById("last-name");
+	const phoneField = document.getElementById("phone");
 	
+	let idReservationMap = new Map();
 	let blockDateDataMap = new Map();
 	let resDateListMap = new Map();
 	let resList = [];
 	let selectedRowId = -1;
+	let resId = 0;
+	let resFound = false;
 
 	function init() {
 		document.getElementById("submit-button").style.display = "none";
+		document.getElementById("del-button").style.display = "none";
 
 		{% for b in blocks %} {
 			const bDate = new Date("{{ b.blkDate }}");
@@ -98,7 +104,13 @@
 			resList.push(data);
 		} {% endfor %}
 
-		dateChange();
+		firstNameField.value = getCookie("firstName");
+		lastNameField.value = getCookie("lastName");
+		phoneField.value = getCookie("phone");
+
+		document.getElementById("sched-date").style.display = "none";
+		checkDone();
+		// dateChange();
 	}
 
 	function dateChange() {
@@ -127,7 +139,7 @@
 			const ap = (time / 60 > 11) ? "PM" : "AM";
 			const timeStr = hr + ":" + min + " " + ap;
 			block.innerHTML = timeStr;
-			if (resTimeList && resTimeList.includes(time)) {
+			if (resTimeList.includes(time)) {
 				row.className = "tr-scheduled";
 			} else {
 				row.onclick = function () {
@@ -138,7 +150,6 @@
 					const selected = tblBody.getElementsByTagName('tr')[rowId];
 					selected.className = "tr-selected";
 					selectedRowId = rowId;
-					checkDone();
 				}
 			}
 
@@ -148,7 +159,7 @@
 		}
 	}
 
-	function addReservation() {
+	function modReservation() {
 		const tblBody = document.getElementById("times-tbl");
 		const row = tblBody.rows[selectedRowId];
 		const date = document.getElementById("avail-date").value;
@@ -159,9 +170,10 @@
 		setCookie("firstName", first, daysToMinutes(30));
 		setCookie("lastName", last, daysToMinutes(30));
 		setCookie("phone", phone, daysToMinutes(30));
-
-		const jsonString = JSON.stringify({ resdate: date, restime: time, first: first, last: last, phone: phone });
-		const url = "{{ url_for('.addreservation') }}";
+		
+		// date, time, first, last, phone) {
+		const jsonString = JSON.stringify({ id: resId, resdate: date, restime: time, first: first, last: last, phone: phone });
+		const url = "{{ url_for('.modreservation') }}";
 
 		fetch(url, {
 			method: 'POST',
@@ -170,42 +182,104 @@
 		})
 		.then(resp => {
 			if (!resp.ok) {
-				alert("Add reservation failed");
+				alert("Change reservation failed");
 				return;
 			}
 
 			resp.json().then(json => {
-				alert("Your reservation for ... has been confirmed");
+				alert("Your reservation for ... has been changed");
 				location.href="{{ url_for('main.index') }}";
 			})
 		})
 		.catch(err => {
-			alert("Add reservation failed: ", err);
+			alert("Change reservation failed: ", err);
 		});
 	}
 
 	function checkDone() {
-		const first = document.getElementById("first-name").value.trim();
-		const last = document.getElementById("last-name").value.trim();
+		const firstField = document.getElementById("first-name");
+		const lastField = document.getElementById("last-name");
+		const first = firstField.value;
+		const last = lastField.value;
 		const phoneField = document.getElementById("phone");
 		const subBtn = document.getElementById("submit-button");
+		const delBtn = document.getElementById("del-button");
+		const dateField = document.getElementById("avail-date");
+		const timeTable = document.getElementById("times-tbl");
+		const schedDiv = document.getElementById("sched-date");
 
-		if ((first != "") && (last != "")) {
-			for (let r of resList) {
-				if ((r.first.toLowerCase() == first.toLowerCase()) && (r.last.toLowerCase() == last.toLowerCase())) {
-					alert("A reservation exists for your name.  You can modify the reservation by selecting change on the main page");
+		if (!resFound && (first != "") && (last != "")) {
+			for (let t of resList) {
+				if ((t.first.toLowerCase() == first.toLowerCase()) &&
+						(t.last.toLowerCase() == last.toLowerCase())) {
+					resFound = true;
+					phoneField.value = t.phone;
+					subBtn.style.display = "flex";
+					delBtn.style.display = "flex";
+					schedDiv.style.display = "flex";
+					firstField.value = t.first;
+					lastField.value = t.last;
+					// firstField.disabled = true;
+					// lastField.disabled = true;
+					dateField.value = t.date;
+					resId = t.id;
+					dateChange();
+					highlightTime(t.time);
 					break;
 				}
 			}
-
-			if ((phone != "") && (selectedRowId >= 0)) {
-			 	subBtn.style.display = "flex";
-			} else {
-				subBtn.style.display = "none";
-			}
-		} else {
-			subBtn.style.display = "none";
+		// } else {
+		// 	subBtn.style.display = "none";
+		// 	delBtn.style.display = "none";
 		}
 	}
+
+	function deleteReservation() {
+		const jsonString = JSON.stringify({ id: resId });
+		let url = "{{ url_for('.delreservation', id='idTag') }}";
+		url = url.replace('idTag', resId);
+
+		fetch(url)
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Delete reservation failed");
+				return;
+			}
+
+			resp.json().then(json => {
+				alert("Your reservation for ... has been deleted");
+				location.href="{{ url_for('main.index') }}";
+			})
+		})
+		.catch(err => {
+			alert("Delete reservation failed: ", err);
+		});
+	}
+
+	function highlightTime(time) {
+		const tblBody = document.getElementById("times-tbl");
+		let i = 0;
+		for (let r of tblBody.rows) {
+			if (r.cells[1].innerText == time) {
+				r.className = "tr-selected";
+				selectedRowId = i;
+				r.onclick = function () {
+					const rowId = this.rowIndex;
+					if (selectedRowId >= 0) {
+						tblBody.rows[selectedRowId].className = "tr-not-selected";
+					}
+					const selected = tblBody.getElementsByTagName('tr')[rowId];
+					selected.className = "tr-selected";
+					selectedRowId = rowId;
+				}
+				break;
+			}
+			i++;
+		}
+	}
+
+	function goHome() {
+	}
+
 
 </script>

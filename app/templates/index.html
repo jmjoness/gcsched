@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleindex.css') }}">
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Tithing Declaration</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleschedule.css') }}">
 </head>
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Gold Canyon Ward</h2>
+			<h2>Gold Canyon Ward Tithing Declaration</h2>
 		</div>
-		<div id="content">
-			<input type="button" id="sched-button" class="sel-button" value= "Tithing Declaration Schedule" onclick="schedule()">
-			<input type="button" id="manage-button" class="sel-button" value= "Management" onclick="management()">
+		<div id="main-page">
+			<input type="button" id="sched-button" class="sel-button" value= "Reserve Time" onclick="schedule()">
+			<input type="button" id="change-button" class="sel-button" value= "Change Time" onclick="change()">
 		</div>
 	</div>
 </html>
@@ -21,11 +26,13 @@
 	}
 
 	function schedule() {
-		window.location = "{{ url_for('.schedule') }}";
+		let str = "{{ url_for('.schedule') }}";
+		window.location = str;
 	}
 
-	// function management() {
-	// 	window.location = "{{ url_for('.manage') }}";
-	// }
+	function change() {
+		let str = "{{ url_for('.change') }}";
+		window.location = str;
+	}
 
 </script>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Tithing Declaration</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body onload="init()">
+	<div id="page">
+		<div id="header">
+			<h2>Show Reservations</h2>
+			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
+		</div>
+		<div id="content">
+			<div id="sched-date">
+				<div id="date-div">
+					<label for="avail-date">Date:</label>
+					<select name="avail-date" id="avail-date" onchange="dateChange()"></select>
+				</div>
+			</div>
+			<div id="sched-times">
+				<table id="times-tbl">
+
+				</table>
+			</div>
+		</div>
+	</div>
+</html>
+
+<script >
+	const dateField = document.getElementById("avail-date");
+
+	let blockDateDataMap = new Map();
+	let resDateListMap = new Map();
+	let resList = [];
+
+	function init() {
+
+		{% for b in blocks %} {
+			const bDate = new Date("{{ b.blkDate }}");
+			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
+			const duration = {{ b.duration }};
+			const start = {{ b.startTime }};
+			const nTimes = {{ b.numBlocks }};
+			// console.log(bDate, duration, start, nTimes)
+			const opt = document.createElement("option");
+			const txt = bDate.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + bDate.getMonth() + "/" + bDate.getDate() + "/" + bDate.getFullYear();
+			const val = bDate.toISOString().substring(0, 10);
+			opt.text = txt;
+			opt.value = val;
+			dateField.appendChild(opt);
+
+			const data = {duration: duration, start: start, nTimes: nTimes};
+			blockDateDataMap.set(val, data);
+
+		} {% endfor %}
+
+		{% for r in reservations %} {
+			const bDate = new Date("{{ r.resDate }}");
+			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
+			const resTime = {{ r.resTime }};
+			const val = bDate.toISOString().substring(0, 10);
+			if (resDateListMap.has(val)) {
+				let list = resDateListMap.get(val);
+				list.push(resTime);
+				resDateListMap.set(val, list);
+			} else {
+				let list = [resTime];
+				resDateListMap.set(val, list);
+			}
+
+			const data = {id: {{ r.id }}, date: val, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
+			resList.push(data);
+		} {% endfor %}
+
+		dateChange();
+	}
+
+	function dateChange() {
+		const date = dateField.value;
+		const data = blockDateDataMap.get(date);
+		const tblBody = document.getElementById("times-tbl");
+		const startTime = data.start;
+		const resTimeList = resDateListMap.get(date);
+
+		tblBody.innerHTML = "";
+		selectedRowId = -1;
+
+		for (let i = 0; i < data.nTimes; i++) {
+			const row = tblBody.insertRow(i);
+			row.className = "tr-not-selected";
+			const block = row.insertCell(0);
+			const time = data.start + data.duration * i;
+			let hr = Math.floor(time / 60) % 12;
+			if (hr == 0) {
+				hr = 12;
+			}
+			let min = (time % 60).toString();
+			if (min == "0") {
+				min = "00";
+			}
+			const ap = (time / 60 > 11) ? "PM" : "AM";
+			const timeStr = hr + ":" + min + " " + ap;
+			block.innerHTML = timeStr;
+
+			const name = row.insertCell(1);
+
+			if (resTimeList && resTimeList.includes(time)) {
+				for (let r of resList) {
+					if ((r.date == date) && (r.time == time)) {
+						name.innerText = r.first + " " + r.last + " (" + r.phone + ")";
+					}
+				}
+			}
+
+			const value = row.insertCell(1);
+			value.innerHTML = time;
+			value.style.display = "none";
+		}
+	}
+
+	function goHome() {
+		window.location = "{{ url_for('.admin')}}";
+	}
+
+</script>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Tithing Declaration</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body onload="init()">
+	<div id="page">
+		<div id="header">
+			<h2>Make Time Block</h2>
+			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
+		</div>
+		<div id="content-block">
+			<div id="sched-times">
+				<table id="times-tbl">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Start</th>
+							<th>End</th>
+						</tr>
+					</thead>
+					<tbody id="times-body">
+
+					</tbody>
+
+				</table>
+			</div>
+			<div id="buttons-div">
+				<input type="button" id="add-button" class="end-button" onclick="addBlock()" value="Add">
+				<input type="button" id="del-button" class="end-button" onclick="delBlock()"" value="Delete">
+			</div>
+			<div id="add-controls">
+				<div class="entry-div">
+					<label for="start-date">Start Date:</label>
+					<input type="date" id="start-date" min="2023-08-21" max="2023-12-31">
+				</div>
+				<div class="entry-div">
+					<label for="start-time">Start Time:</label>
+					<input type="time" id="start-time">
+				</div>
+				<div class="entry-div">
+					<label for="end-time">End Time:</label>
+					<input type="time" id="end-time">
+				</div>
+				<div id="buttons-div">
+					<input type="button" id="save-button" class="end-button" onclick="saveBlock()" value="Save">
+					<input type="button" id="cancel-button" class="end-button" onclick="cancelBlock()" value="Cancel">
+				</div>
+			</div>
+		</div>
+	</div>
+</html>
+
+<script >
+	const dateField = document.getElementById("avail-date");
+
+	let blocks = []
+
+	function init() {
+		document.getElementById("add-controls").style.display = "none";
+
+		{% for b in blocks %} {
+			const id = {{ b.id }};
+			const bDate = new Date("{{ b.blkDate }}");
+			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
+			const duration = {{ b.duration }};
+			const start = {{ b.startTime }};
+			const nTimes = {{ b.numBlocks }};
+
+			const data = {id: id, date: bDate, duration: duration, start: start, nTimes: nTimes};
+			blocks.push(data);
+		} {% endfor %}
+
+		showBlocks();
+		document.getElementById("del-button").disabled = true;
+	}
+
+	function timeString(t) {
+		let hr = Math.floor(t / 60) % 12;
+		if (hr == 0) {
+			hr = 12;
+		}
+		let min = (t % 60).toString();
+		if (min == "0") {
+			min = "00";
+		}
+		const ap = (t / 60 > 11) ? "PM" : "AM";
+		const timeStr = hr + ":" + min + " " + ap;
+
+		return timeStr;
+	}
+
+	function dateString(d) {
+		bDate = d;
+		bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
+		const txt = bDate.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + (bDate.getMonth() + 1) + "/" + bDate.getDate() + "/" + bDate.getFullYear();
+
+		return txt;
+	}
+
+	function showBlocks() {
+		const tblBody = document.getElementById("times-body");
+
+		tblBody.innerHTML = "";
+		selectedRowId = -1;
+		let i = 0;
+		for (const d of blocks) {
+			const row = tblBody.insertRow(i);
+			row.className = "tr-not-selected";
+			const dateCell = row.insertCell(0);
+			dateCell.innerText = dateString(d.date);
+			const startCell = row.insertCell(1);
+			startCell.innerText = timeString(d.start);
+			const endCell = row.insertCell(2);
+			const endTime = d.start + d.duration * d.nTimes;
+			endCell.innerText = timeString(endTime);
+			const idCell = row.insertCell(3);
+			idCell.innerText = d.id.toString();
+			idCell.style.display = "none";
+			i++;
+			row.onclick = function () {
+				const rowId = this.rowIndex - 1;
+				if (selectedRowId >= 0) {
+					tblBody.rows[selectedRowId].className = "tr-not-selected";
+				}
+				const selected = tblBody.getElementsByTagName('tr')[rowId];
+				selected.className = "tr-selected";
+				selectedRowId = rowId;
+				document.getElementById("del-button").disabled = false;
+			}
+	}
+	}
+
+	function addBlock() {
+		document.getElementById("add-controls").style.display = "flex";
+	}
+
+	function delBlock() {
+		const tblBody = document.getElementById("times-body");
+		const row = tblBody.rows[selectedRowId];
+		const id = row.cells[3].innerText;
+
+		const jsonString = JSON.stringify({ id: id });
+		const url = "{{ url_for('.delblock') }}";
+
+		console.log(id, jsonString)
+		fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: jsonString
+		})
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Delete block failed");
+				return;
+			}
+
+			resp.json().then(json => {
+				alert("Block has been deleted");
+				location.reload();
+			})
+		})
+		.catch(err => {
+			alert("Delete block failed: ", err);
+		});
+	}
+
+	function timeStrToInt(str) {
+		const timeAry = str.split(":");
+		let timeVal = 0;
+
+		if (timeAry.length == 2) {
+			timeVal = parseInt(timeAry[0]) * 60 + parseInt(timeAry[1]);
+		}
+
+		return timeVal;
+	}
+
+	function saveBlock() {
+		const startDate = document.getElementById("start-date").value;
+		const startTime = document.getElementById("start-time").value;
+		const endTime = document.getElementById("end-time").value;
+		const timeAry = startTime.split(":");
+		let timeVal = timeStrToInt(startTime);
+		let count = Math.floor((timeStrToInt(endTime) - timeVal) / 10);
+
+		console.log(startDate, startTime, endTime, timeVal, count)
+		const jsonString = JSON.stringify({ date: startDate, time: timeVal, count: count });
+		const url = "{{ url_for('.addblock') }}";
+
+		fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: jsonString
+		})
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Add block failed");
+				return;
+			}
+
+			resp.json().then(json => {
+				alert("Block has been added");
+				// document.getElementById("add-controls").style.display = "none";
+				location.reload();
+			})
+		})
+		.catch(err => {
+			alert("Add block failed: ", err);
+		});
+	}
+
+	function cancelBlock() {
+		document.getElementById("add-controls").style.display = "none";
+	}
+
+	function goHome() {
+		window.location = "{{ url_for('.admin')}}";
+	}
+
+</script>

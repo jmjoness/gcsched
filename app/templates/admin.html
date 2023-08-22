@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Tithing Declaration Admin</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body onload="init()">
+	<div id="page">
+		<div id="header">
+			<h2>Administration</h2>
+		</div>
+		<div id="main-page">
+			<input type="button" id="show-button" class="sel-button" value= "Show List" onclick="showlist()">
+			<input type="button" id="blocks-button" class="sel-button" value= "Set Blocks" onclick="setBlocks()">
+		</div>
+	</div>
+</html>
+
+<script src="/static/cookie.js"></script>
+<script >
+	const dateField = document.getElementById("avail-date");
+
+	let blockDateDataMap = new Map();
+	let resDateListMap = new Map();
+	let resList = [];
+
+	function init() {
+		const valid = getCookie("adminValid");
+		if (valid != "true") {
+			let pw = prompt("Enter password");
+			if (pw != 'juubun') {
+				setCookie("adminValid", "true", daysToMinutes(7));
+				window.location = "{{ url_for('.index')}}";
+			}
+		}
+	}
+	
+	function showlist() {
+		let str = "{{ url_for('.showlist') }}";
+		window.location = str;
+	}
+
+	function setBlocks() {
+		let str = "{{ url_for('.blocks') }}";
+		window.location = str;
+	}
+
+</script>

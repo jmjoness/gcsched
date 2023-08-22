@@ -3,14 +3,19 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 }
 input {
-	font-size: 3vw;
+	font-size: 24px;
 }
 select {
-	font-size: 3vw;
+	font-size: 24px;
 }
+label {
+	font-size: 24px;
+}
+
 #page {
 	display: flex;
 	flex-flow: column;
+	background-color: #c0c0ff;
 	width: 100%;
 	height: 100%;
 }
@@ -18,7 +23,7 @@ select {
 	display: flex;
 	flex-flow: row;
 	width: 100%;
-	height: 60px;
+	/* height: 60px; */
 	background-color: blue;
 	color: white;
 	padding-left: 20px;
@@ -26,46 +31,121 @@ select {
 #home-button {
 	margin-top: 10px;
 	margin-left: 50px;
-	height: 5vw;
+	width: 100px;
 }
+
 #content {
 	display: flex;
-	flex-flow: row;
+	flex-flow: column;
+	justify-content: flex-start;
+	align-items: center;
+	background-color: #c0c0ff;
 	width: 100%;
-	position:absolute;
-	top: 60px;
-	bottom: 0px;
 }
-#sched-graphic {
-	display: block;
-	width: 60%;
-	height: 100%;
+
+#content-block {
+	display: flex;
+	flex-flow: column;
+	justify-content: space-around;
+	align-items: center;
+	background-color: #c0c0ff;
+	width: 100%;
+}
+
+#main-page {
+	display: flex;
+	flex-flow: column;
+	justify-content: flex-start;
+	align-items: center;
+	background-image: url(building.jpg);
+	background-size: 480px;
+	background-color: #c0c0ff;
+	/* padding-bottom: 50px; */
+	width: 480px;
+	height: 326px;
+	margin: auto;
+}
+
+.sel-button {
+	margin-left: 20px;
+	margin-top: 20px;
+	background-color: #c0c0ff;
+	height: 50px;
+	width: 300px;
+	padding-left: 20px;
+	padding-right: 20px;
+	font-size: 30px;
+	border-radius: 8px;
+	box-shadow: 4px 4px 4px 0px rgba(0, 0, 0, 0.5);
+}
+
+.instruction {
+	font-size: 18px;
+	width: 80%;
+	margin: 10px auto;
 	background-color: #c0c0ff;
 }
+
+table, th, td {
+	font-size: 20px;
+	border: 1px solid;
+	border-collapse: collapse;
+}
+
+td {
+	padding: 2px 20px;
+}
+
+.tr-selected {
+	background-color: #ffff00;
+}
+
+.tr-not-selected {
+	background-color: #ffffff;
+}
+
+.tr-scheduled {
+	background-color: #c0c0c0;
+}
+
+#sched-div {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: space-evenly;
+	align-items: flex-start;
+	/* margin-left: 40px; */
+	/* margin-top: 20px; */
+	/* padding: 0px 10px; */
+	font-size: 24px;
+	width: 80%;
+}
+
 #sched-input {
 	display: flex;
 	flex-flow: column;
-	width: 37%;
-	height: 100%;
-	background-color: #c0c0ff;
-	font-size: 3vw;
-}
-#sched-svg {
-	margin-left: 20px;
+	/* margin-left: 40px; */
 	margin-top: 20px;
-	width: 80%;
-	height: 85%;
+	padding: 0px 10px;
+	/* font-size: 24px; */
 }
 
 #date-div {
 	display: flex;
-	flex-flow: row;
-	margin-left: 40px;
+	flex-flow: column;
 }
 
 #sched-date {
+	display: flex;
+	flex-flow: column;
 	margin-top: 20px;
-	font-size: 3vw;
+	/* margin-left: 40px; */
+}
+
+#sched-times {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	margin-top: 20px;
 }
 .sched-time {
 	font-size: 36px;
@@ -74,25 +154,16 @@ select {
 	font-size: 30px;
 }
 
-.time-button {
-	margin-top: 20px;
-	height: 5vw;
-}
-
-#pilot-div {
-	margin-top: 20px;
-	margin-left: 20px;
-	width: 50px;
-}
-
-#time-div {
-	margin-top: 20px;
-	margin-left: 20px;
-	width: 50px;
-}
-
 .end-button {
 	margin-right: 20px;
+	height: 40px;
+}
+
+.entry-div {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: left;
 }
 
 #buttons-div {
@@ -100,4 +171,14 @@ select {
 	flex-flow: row;
 	margin-top: 20px;
 	margin-left: 20px;
+}
+
+#add-controls {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: left;
+	margin: 20px auto;
+	gap: 10px;
+
 }
