@@ -46,10 +46,10 @@
 			</div>
 		</div>
 	</div>
-
 </html>
 
 <script src="/static/cookie.js"></script>
+<script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
 	const firstNameField = document.getElementById("first-name");
@@ -57,8 +57,7 @@
 	const phoneField = document.getElementById("phone");
 	
 	let idReservationMap = new Map();
-	let blockDateDataMap = new Map();
-	let resDateListMap = new Map();
+	let blockIdDataMap = new Map();
 	let resList = [];
 	let selectedRowId = -1;
 	let resId = 0;
@@ -74,15 +73,15 @@
 			const duration = {{ b.duration }};
 			const start = {{ b.startTime }};
 			const nTimes = {{ b.numBlocks }};
+			const bId = {{ b.id }};
 			const opt = document.createElement("option");
-			const txt = bDate.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + bDate.getMonth() + "/" + bDate.getDate() + "/" + bDate.getFullYear();
-			const val = bDate.toISOString().substring(0, 10);
+			const txt = getBlockString(bDate, start, duration * nTimes);
 			opt.text = txt;
-			opt.value = val;
+			opt.value = bId;
 			dateField.appendChild(opt);
 
-			const data = {duration: duration, start: start, nTimes: nTimes};
-			blockDateDataMap.set(val, data);
+			const idData = {id: bId.toString(), date: bDate, duration: duration, start: start, nTimes: nTimes};
+			blockIdDataMap.set(bId.toString(), idData);
 
 		} {% endfor %}
 
@@ -90,17 +89,8 @@
 			const bDate = new Date("{{ r.resDate }}");
 			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
 			const resTime = {{ r.resTime }};
-			const val = bDate.toISOString().substring(0, 10);
-			if (resDateListMap.has(val)) {
-				let list = resDateListMap.get(val);
-				list.push(resTime);
-				resDateListMap.set(val, list);
-			} else {
-				let list = [resTime];
-				resDateListMap.set(val, list);
-			}
 
-			const data = {id: {{ r.id }}, date: val, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
+			const data = {id: {{ r.id }}, date: bDate, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
 			resList.push(data);
 		} {% endfor %}
 
@@ -110,15 +100,22 @@
 
 		document.getElementById("sched-date").style.display = "none";
 		checkDone();
-		// dateChange();
 	}
 
 	function dateChange() {
-		const date = dateField.value;
-		const data = blockDateDataMap.get(date);
+		const data = blockIdDataMap.get(dateField.value);
+		const date = data.date;
 		const tblBody = document.getElementById("times-tbl");
 		const startTime = data.start;
-		const resTimeList = resDateListMap.get(date);
+	
+		let resTimeInfoMap = new Map();
+
+		for (let r of resList) {
+			if ((date.getTime() == r.date.getTime()) && (r.time >= data.start) && (r.time < data.start + data.duration * data.nTimes)) {
+				let info = r.first + " " + r.last + " (" + r.phone + ")";
+				resTimeInfoMap.set(r.time, info);
+			}
+		}
 
 		tblBody.innerHTML = "";
 		selectedRowId = -1;
@@ -139,7 +136,7 @@
 			const ap = (time / 60 > 11) ? "PM" : "AM";
 			const timeStr = hr + ":" + min + " " + ap;
 			block.innerHTML = timeStr;
-			if (resTimeList.includes(time)) {
+			if (resTimeInfoMap.has(time)) {
 				row.className = "tr-scheduled";
 			} else {
 				row.onclick = function () {
@@ -162,7 +159,8 @@
 	function modReservation() {
 		const tblBody = document.getElementById("times-tbl");
 		const row = tblBody.rows[selectedRowId];
-		const date = document.getElementById("avail-date").value;
+		const blockId = document.getElementById("avail-date").value;
+		const date = blockIdDataMap.get(blockId).date.toISOString().substring(0,10);
 		const time = row.cells[1].innerText;
 		const first = document.getElementById("first-name").value.trim();
 		const last = document.getElementById("last-name").value.trim();
@@ -172,6 +170,7 @@
 		setCookie("phone", phone, daysToMinutes(30));
 		
 		// date, time, first, last, phone) {
+		console.log("mod res id", resId)
 		const jsonString = JSON.stringify({ id: resId, resdate: date, restime: time, first: first, last: last, phone: phone });
 		const url = "{{ url_for('.modreservation') }}";
 
@@ -196,6 +195,19 @@
 		});
 	}
 
+	function findValFromDateTime (date, time) {
+		console.log(date, time)
+		for (const b of blockIdDataMap.values()) {
+			console.log(b)
+			if ((b.date.getTime() == date.getTime()) && (time >= b.start) && (time < b.start  + b.duration * b.nTimes)) {
+				console.log(b.date, b.start, b.duration, b.nTimes)
+				return b.id;
+			}
+		}
+
+		return "";
+	}
+
 	function checkDone() {
 		const firstField = document.getElementById("first-name");
 		const lastField = document.getElementById("last-name");
@@ -208,10 +220,12 @@
 		const timeTable = document.getElementById("times-tbl");
 		const schedDiv = document.getElementById("sched-date");
 
+		console.log(first, last)
 		if (!resFound && (first != "") && (last != "")) {
 			for (let t of resList) {
 				if ((t.first.toLowerCase() == first.toLowerCase()) &&
 						(t.last.toLowerCase() == last.toLowerCase())) {
+					console.log(t.date, t.time)
 					resFound = true;
 					phoneField.value = t.phone;
 					subBtn.style.display = "flex";
@@ -221,11 +235,18 @@
 					lastField.value = t.last;
 					// firstField.disabled = true;
 					// lastField.disabled = true;
-					dateField.value = t.date;
-					resId = t.id;
-					dateChange();
-					highlightTime(t.time);
-					break;
+					const val = findValFromDateTime(t.date, t.time);
+					console.log(val)
+					if (val != "") {
+						dateField.value = val;
+						resId = t.id;
+						dateChange();
+						highlightTime(t.time);
+						break;
+					} else {
+						alert("Reservation not found");
+						break;
+					}
 				}
 			}
 		// } else {
@@ -276,6 +297,7 @@
 			}
 			i++;
 		}
+		resFound = false;
 	}
 
 	function goHome() {

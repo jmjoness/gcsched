@@ -14,6 +14,7 @@ from .. import db
 from . import main, logger
 from wtforms import SubmitField
 
+blkDuration = 15
 
 class Reservation(db.Model):
 	__tablename__ = 'reservation'
@@ -175,7 +176,7 @@ def addblock():
 
 		blk.blkDate = date
 		blk.resTime = date
-		blk.duration = 10
+		blk.duration = blkDuration
 		blk.startTime = time
 		blk.numBlocks = count
 		print(blk)

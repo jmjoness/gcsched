@@ -30,11 +30,11 @@
 	</div>
 </html>
 
+<script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
 
-	let blockDateDataMap = new Map();
-	let resDateListMap = new Map();
+	let blockIdDataMap = new Map();
 	let resList = [];
 
 	function init() {
@@ -45,16 +45,15 @@
 			const duration = {{ b.duration }};
 			const start = {{ b.startTime }};
 			const nTimes = {{ b.numBlocks }};
-			// console.log(bDate, duration, start, nTimes)
+			const bId = {{ b.id }};
 			const opt = document.createElement("option");
-			const txt = bDate.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + bDate.getMonth() + "/" + bDate.getDate() + "/" + bDate.getFullYear();
-			const val = bDate.toISOString().substring(0, 10);
+			const txt = getBlockString(bDate, start, duration * nTimes);
 			opt.text = txt;
-			opt.value = val;
+			opt.value = bId;
 			dateField.appendChild(opt);
 
-			const data = {duration: duration, start: start, nTimes: nTimes};
-			blockDateDataMap.set(val, data);
+			const idData = {date: bDate, duration: duration, start: start, nTimes: nTimes};
+			blockIdDataMap.set(bId.toString(), idData);
 
 		} {% endfor %}
 
@@ -62,17 +61,8 @@
 			const bDate = new Date("{{ r.resDate }}");
 			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
 			const resTime = {{ r.resTime }};
-			const val = bDate.toISOString().substring(0, 10);
-			if (resDateListMap.has(val)) {
-				let list = resDateListMap.get(val);
-				list.push(resTime);
-				resDateListMap.set(val, list);
-			} else {
-				let list = [resTime];
-				resDateListMap.set(val, list);
-			}
-
-			const data = {id: {{ r.id }}, date: val, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
+			const val = getDateValue(bDate);
+			const data = {id: {{ r.id }}, date: bDate, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
 			resList.push(data);
 		} {% endfor %}
 
@@ -80,11 +70,18 @@
 	}
 
 	function dateChange() {
-		const date = dateField.value;
-		const data = blockDateDataMap.get(date);
+		const data = blockIdDataMap.get(dateField.value);
+		const date = data.date;
 		const tblBody = document.getElementById("times-tbl");
-		const startTime = data.start;
-		const resTimeList = resDateListMap.get(date);
+	
+		let resTimeInfoMap = new Map();
+
+		for (let r of resList) {
+			if ((date.getTime() == r.date.getTime()) && (r.time >= data.start) && (r.time < data.start + data.duration * data.nTimes)) {
+				let info = r.first + " " + r.last + " (" + r.phone + ")";
+				resTimeInfoMap.set(r.time, info);
+			}
+		}
 
 		tblBody.innerHTML = "";
 		selectedRowId = -1;
@@ -108,12 +105,8 @@
 
 			const name = row.insertCell(1);
 
-			if (resTimeList && resTimeList.includes(time)) {
-				for (let r of resList) {
-					if ((r.date == date) && (r.time == time)) {
-						name.innerText = r.first + " " + r.last + " (" + r.phone + ")";
-					}
-				}
+			if (resTimeInfoMap.has(time)) {
+				name.innerText = resTimeInfoMap.get(time);
 			}
 
 			const value = row.insertCell(1);

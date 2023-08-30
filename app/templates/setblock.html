@@ -56,6 +56,7 @@
 	</div>
 </html>
 
+<script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
 
@@ -98,8 +99,8 @@
 	function dateString(d) {
 		bDate = d;
 		bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
-		const txt = bDate.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + (bDate.getMonth() + 1) + "/" + bDate.getDate() + "/" + bDate.getFullYear();
-
+		const txt = getDateString(bDate);
+		
 		return txt;
 	}
 
@@ -187,7 +188,7 @@
 		const endTime = document.getElementById("end-time").value;
 		const timeAry = startTime.split(":");
 		let timeVal = timeStrToInt(startTime);
-		let count = Math.floor((timeStrToInt(endTime) - timeVal) / 10);
+		let count = Math.floor((timeStrToInt(endTime) - timeVal) / blkDuration);
 
 		console.log(startDate, startTime, endTime, timeVal, count)
 		const jsonString = JSON.stringify({ date: startDate, time: timeVal, count: count });
