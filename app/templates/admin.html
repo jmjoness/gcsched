@@ -32,8 +32,9 @@
 		const valid = getCookie("adminValid");
 		if (valid != "true") {
 			let pw = prompt("Enter password");
-			if (pw != 'juubun') {
+			if (pw == 'juubun') {
 				setCookie("adminValid", "true", daysToMinutes(7));
+			} else {
 				window.location = "{{ url_for('.index')}}";
 			}
 		}
