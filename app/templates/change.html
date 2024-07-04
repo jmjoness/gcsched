@@ -11,13 +11,13 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Change Reservation</h2>
-			<!-- <input type="button" id="home-button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Home"> -->
+			<h2 id="title-header">Change Reservation</h2>
 		</div>
 		<div id="content">
 			<div class="instruction">
-				<p>Enter your name to bring up your reservation for tithing declaration.  Then you can select a different date, and time.  
-					Press Save to finish the reservaton.</p>
+				<!-- <p>Enter your name to bring up your reservation for tithing declaration.  Then you can select a different date, and time.   -->
+				<p>Enter your name to bring up your reservation for ministering interview.  Then you can select a different date, and time.  
+						Press Save to finish the reservaton.</p>
 				<p>Times with a gray background are already reserved. </p>
 			</div>
 			<div id="sched-input">
@@ -30,7 +30,7 @@
 				<div id="buttons-div">
 					<input type="button" id="submit-button" class="end-button" onclick="modReservation()" value="Save">
 					<input type="button" id="del-button" class="end-button" onclick="deleteReservation()" value="Delete">
-					<input type="button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Cancel">
+					<input type="button" class="end-button" onclick='cancel()' value="Cancel">
 				</div>
 			</div>
 			<div id="sched-date">
@@ -64,6 +64,10 @@
 	let resFound = false;
 
 	function init() {
+		const title = "{{ title }}"
+		const header = document.getElementById("title-header")
+		header.innerText = title
+
 		document.getElementById("submit-button").style.display = "none";
 		document.getElementById("del-button").style.display = "none";
 
@@ -133,7 +137,7 @@
 			if (min == "0") {
 				min = "00";
 			}
-			const ap = (time / 60 > 11) ? "PM" : "AM";
+			const ap = (~~(time / 60) > 11) ? "PM" : "AM";
 			const timeStr = hr + ":" + min + " " + ap;
 			block.innerHTML = timeStr;
 			if (resTimeInfoMap.has(time)) {
@@ -187,7 +191,10 @@
 
 			resp.json().then(json => {
 				alert("Your reservation for ... has been changed");
-				location.href="{{ url_for('main.index') }}";
+				const acct = getCookie('Account')
+				let url = "{{ url_for('main.index', acct='acctTag') }}"
+				url = url.replace('acctTag', acct)
+				location.href = url
 			})
 		})
 		.catch(err => {
@@ -269,7 +276,10 @@
 
 			resp.json().then(json => {
 				alert("Your reservation for ... has been deleted");
-				location.href="{{ url_for('main.index') }}";
+				const acct = getCookie('Account')
+				let url = "{{ url_for('main.index', acct='acctTag') }}"
+				url = url.replace('acctTag', acct)
+				location.href = url
 			})
 		})
 		.catch(err => {
@@ -301,6 +311,13 @@
 	}
 
 	function goHome() {
+	}
+
+	function cancel() {
+		const acct = getCookie('Account')
+		let url = "{{ url_for('main.index', acct='acctTag') }}"
+		url = url.replace('acctTag', acct)
+		location.href = url
 	}
 
 

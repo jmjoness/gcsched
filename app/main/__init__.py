@@ -6,4 +6,4 @@ logger = LocalProxy(lambda: current_app.logger)
 
 main = Blueprint('main', __name__)
 
-from . import views, schedviews
+from . import schedviews

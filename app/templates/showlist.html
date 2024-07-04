@@ -11,7 +11,7 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Show Reservations</h2>
+			<h2 id="title-header">Show Reservations</h2>
 			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
 		</div>
 		<div id="content">
@@ -38,6 +38,9 @@
 	let resList = [];
 
 	function init() {
+		const title = "{{ title }}"
+		const header = document.getElementById("title-header")
+		header.innerText = "Reservations - " + title
 
 		{% for b in blocks %} {
 			const bDate = new Date("{{ b.blkDate }}");
@@ -69,6 +72,14 @@
 		dateChange();
 	}
 
+	function phoneFormat(number) {
+		let rtn = number
+		if (number.length == 10) {
+			rtn = number.substring(0, 3) + "-" + number.substring(3,6) + "-" + number.substring(6)
+		}
+		return rtn
+	}
+
 	function dateChange() {
 		const data = blockIdDataMap.get(dateField.value);
 		const date = data.date;
@@ -78,7 +89,7 @@
 
 		for (let r of resList) {
 			if ((date.getTime() == r.date.getTime()) && (r.time >= data.start) && (r.time < data.start + data.duration * data.nTimes)) {
-				let info = r.first + " " + r.last + " (" + r.phone + ")";
+				let info = r.first + " " + r.last + " (" + phoneFormat(r.phone) + ")";
 				resTimeInfoMap.set(r.time, info);
 			}
 		}
@@ -99,7 +110,7 @@
 			if (min == "0") {
 				min = "00";
 			}
-			const ap = (time / 60 > 11) ? "PM" : "AM";
+			const ap = (~~(time / 60) > 11) ? "PM" : "AM";
 			const timeStr = hr + ":" + min + " " + ap;
 			block.innerHTML = timeStr;
 

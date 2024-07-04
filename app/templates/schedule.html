@@ -11,13 +11,13 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Schedule 2023</h2>
-			<!-- <input type="button" id="home-button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Home"> -->
+			<h2 id="title-header">Schedule 2024</h2>
 		</div>
 		<div id="content">
 			<div class="instruction">
-				<p>To reserve a time for tithing declaration, select a date, and time, then enter your name and phone number.  
-					Press Save to finish the reservaton.</p>
+				<!-- <p>To reserve a time for tithing declaration, select a date, and time, then enter your name and phone number.   -->
+				<p>To reserve a time for ministering interview, select a date, and time, then enter your name and phone number.  
+						Press Save to finish the reservaton.</p>
 				<p>Times with a gray background are already reserved. </p>
 			</div>
 			<div id="sched-div">
@@ -27,10 +27,10 @@
 					<label for="last-name">Last Name:</label>
 					<input type="text" name="last-name" id="last-name" onblur="checkDone()">
 					<label for="phone">Telephone Number:</label>
-					<input type="text" name="phone" id="phone" onblur="checkDone()">
+					<input type="tel" name="phone" id="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required onblur="checkDone()">
 					<div id="buttons-div">
 						<input type="button" id="submit-button" class="end-button" onclick="addReservation()" value="Save">
-						<input type="button" class="end-button" onclick='location.href="{{ url_for('main.index') }}"' value="Cancel">
+						<input type="button" class="end-button" onclick='cancel()' value="Cancel">
 					</div>
 				</div>
 				<div id="sched-date">
@@ -60,6 +60,10 @@
 	let selectedRowId = -1;
 
 	function init() {
+		const title = "{{ title }}"
+		const header = document.getElementById("title-header")
+		header.innerText = title
+
 		document.getElementById("submit-button").style.display = "none";
 
 		{% for b in blocks %} {
@@ -120,7 +124,7 @@
 			if (min == "0") {
 				min = "00";
 			}
-			const ap = (time / 60 > 11) ? "PM" : "AM";
+			const ap = (~~(time / 60) > 11) ? "PM" : "AM";
 			const timeStr = hr + ":" + min + " " + ap;
 			block.innerHTML = timeStr;
 
@@ -175,7 +179,7 @@
 
 			resp.json().then(json => {
 				alert("Your reservation for ... has been confirmed");
-				location.href="{{ url_for('main.index') }}";
+				cancel();
 			})
 		})
 		.catch(err => {
@@ -205,6 +209,13 @@
 		} else {
 			subBtn.style.display = "none";
 		}
+	}
+
+	function cancel() {
+		const acct = getCookie('Account')
+		let url = "{{ url_for('main.index', acct='acctTag') }}"
+		url = url.replace('acctTag', acct)
+		location.href = url
 	}
 
 </script>

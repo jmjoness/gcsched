@@ -11,7 +11,7 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Make Time Block</h2>
+			<h2 id="title-header">Make Time Block</h2>
 			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
 		</div>
 		<div id="content-block">
@@ -37,7 +37,7 @@
 			<div id="add-controls">
 				<div class="entry-div">
 					<label for="start-date">Start Date:</label>
-					<input type="date" id="start-date" min="2023-08-21" max="2023-12-31">
+					<input type="date" id="start-date" min="2024-05-15" max="2024-08-31">
 				</div>
 				<div class="entry-div">
 					<label for="start-time">Start Time:</label>
@@ -63,6 +63,10 @@
 	let blocks = []
 
 	function init() {
+		const title = "{{ title }}"
+		const header = document.getElementById("title-header")
+		header.innerText = "Blocks - " + title
+
 		document.getElementById("add-controls").style.display = "none";
 
 		{% for b in blocks %} {
@@ -87,10 +91,10 @@
 			hr = 12;
 		}
 		let min = (t % 60).toString();
-		if (min == "0") {
-			min = "00";
+		if (min.length < 2) {
+			min = "0" + min
 		}
-		const ap = (t / 60 > 11) ? "PM" : "AM";
+		const ap = (~~(t / 60) > 11) ? "PM" : "AM";
 		const timeStr = hr + ":" + min + " " + ap;
 
 		return timeStr;

@@ -11,7 +11,7 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<h2>Administration</h2>
+			<h2 id="title-header">Administration</h2>
 		</div>
 		<div id="main-page">
 			<input type="button" id="show-button" class="sel-button" value= "Show List" onclick="showlist()">
@@ -29,6 +29,10 @@
 	let resList = [];
 
 	function init() {
+		const title = "{{ title }}"
+		const header = document.getElementById("title-header")
+		header.innerText = "Admin - " + title
+
 		const valid = getCookie("adminValid");
 		if (valid != "true") {
 			let pw = prompt("Enter password");

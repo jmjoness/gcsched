@@ -18,3 +18,10 @@ def index():
 	logger.debug("debug: index")
 	return render_template('index.html')
 
+
+@main.route("/<acct>")
+def index(acct):
+	print("print: index", flush=True)
+	logger.info("logger: index")
+	logger.debug("debug: index")
+	return render_template('index.html')

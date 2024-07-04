@@ -1,4 +1,4 @@
-const blkDuration = 15;
+const blkDuration = 20;
 
 function getDateString(date) {
 	return date.toLocaleDateString('en-us', { weekday: 'long'}) + ", " + (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
