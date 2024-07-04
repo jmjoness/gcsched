@@ -127,6 +127,11 @@
 	}
 
 	function goHome() {
+		const acct = getCookie('Account')
+		let url = "{{ url_for('main.index', acct='acctTag') }}"
+		url = url.replace('acctTag', acct)
+		location.href = url
+
 		window.location = "{{ url_for('.admin')}}";
 	}
 
