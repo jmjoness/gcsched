@@ -30,6 +30,7 @@
 	</div>
 </html>
 
+<script src="/static/cookie.js"></script>
 <script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
@@ -128,11 +129,9 @@
 
 	function goHome() {
 		const acct = getCookie('Account')
-		let url = "{{ url_for('main.index', acct='acctTag') }}"
+		let url = "{{ url_for('main.admin', acct='acctTag') }}"
 		url = url.replace('acctTag', acct)
 		location.href = url
-
-		window.location = "{{ url_for('.admin')}}";
 	}
 
 </script>

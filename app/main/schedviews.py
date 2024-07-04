@@ -76,15 +76,14 @@ def index(acct=None):
 	logger.debug("debug: index")
 	resp = None
 
-	if acct == None:
-		resp = make_response(render_template('noaccount.html'))
-
-	else:
+	if acct is not None:
 		account = Account.query.filter_by(name=acct).first()
-		resp = make_response(render_template('index.html', acct=account.name, title=account.title))
-
-	resp.set_cookie('Account', acct)
-	return resp
+		if account is not None:
+			resp = make_response(render_template('index.html', acct=account.name, title=account.title))
+			resp.set_cookie('Account', acct)
+			return resp
+		
+	return render_template('noaccount.html')
 
 @main.route("/schedule")
 def schedule():
@@ -280,5 +279,24 @@ def delblock():
 		return jsonify(success=True), 200
 	except exc.SQLAlchemyError as e:
 		print("exception deleting block: ", e, flush=True)
+		db.session.rollback()
+		return jsonify(success=False), 400
+
+@main.route("/checkpw/<acct>/<pw>")
+def checkpw(acct, pw):
+	try:
+		acctName = request.cookies.get("Account")
+		account = Account.query.filter_by(name=acctName).first()
+		OK = (pw == account.pw)
+		print(acctName, account.name, account.pw, OK)
+		if OK:
+			print("OK", OK)
+			return jsonify(success=True), 200
+		else:
+			print("not OK", OK)
+			return jsonify(success=False), 400
+
+	except exc.SQLAlchemyError as e:
+		print("exception checking PW: ", e, flush=True)
 		db.session.rollback()
 		return jsonify(success=False), 400

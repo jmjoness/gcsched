@@ -33,14 +33,38 @@
 		const header = document.getElementById("title-header")
 		header.innerText = "Admin - " + title
 
+		const acct = "{{ acct }}"
+
 		const valid = getCookie("adminValid");
 		if (valid != "true") {
 			let pw = prompt("Enter password");
-			if (pw == 'juubun') {
+			let url = "{{ url_for('.checkpw', acct='acctTag', pw='pwTag') }}";
+			url = url.replace('acctTag', acct);
+			url = url.replace('pwTag', pw);
+			console.log(url)
+
+			fetch(url)
+			.then(resp => {
+				console.log(resp, resp.ok)
+				if (!resp.ok) {
+					alert("Account or password is invalid: " + acct + ", " + pw);
+					window.location = "{{ url_for('.index')}}";
+					return;
+				}
+
 				setCookie("adminValid", "true", daysToMinutes(7));
-			} else {
-				window.location = "{{ url_for('.index')}}";
-			}
+			})
+			.catch(err => {
+				alert("Password check failed: ", err);
+			});
+
+
+
+			// if (pw == 'juubun') {
+			// 	setCookie("adminValid", "true", daysToMinutes(7));
+			// } else {
+			// 	window.location = "{{ url_for('.index')}}";
+			// }
 		}
 	}
 	
