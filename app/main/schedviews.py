@@ -15,7 +15,7 @@ from .. import db
 from . import main, logger
 from wtforms import SubmitField
 
-blkDuration = 20
+# blkDuration = 20
 
 class Account(db.Model):
 	__tablename__ = 'account'
@@ -23,6 +23,7 @@ class Account(db.Model):
 	name = db.Column(db.String(32))
 	pw = db.Column(db.String(32))
 	title = db.Column(db.String(32))
+	blockSize = db.Column(db.Integer)
 
 	def __repr__(self):
 		# return '<Account %s>' % self.name
@@ -59,19 +60,9 @@ class Block(db.Model):
 class ScheduleForm(FlaskForm):
 	submit = SubmitField('Submit')
 
-
-# @main.route("/")
-# def index():
-# 	print("print: index", flush=True)
-# 	logger.info("logger: index")
-# 	logger.debug("debug: index")
-# 	return render_template('index.html')
-
-
 @main.route("/")
 @main.route("/<acct>")
 def index(acct=None):
-	print("print: index", acct, flush=True)
 	logger.info("logger: index")
 	logger.debug("debug: index")
 	resp = None
@@ -91,9 +82,8 @@ def schedule():
 	account = Account.query.filter_by(name=acctName).first()
 	form = ScheduleForm
 	blocks = Block.query.filter(Block.blkDate >= date.today(), Block.acctId == account.id).order_by(Block.blkDate).all()
-	reservations = Reservation.query.filter(Block.blkDate >= date.today()).order_by(Reservation.resDate, Reservation.resTime).all()
 
-	return render_template('schedule.html', form=form, blocks=blocks, reservations=reservations, acct=account.name, title=account.title)
+	return render_template('schedule.html', form=form, blocks=blocks, account=account)
 
 @main.route("/change")
 def change():
@@ -101,17 +91,14 @@ def change():
 	account = Account.query.filter_by(name=acctName).first()
 	form = ScheduleForm
 	blocks = Block.query.filter_by(acctId=account.id).order_by(Block.blkDate).all()
-	reservations = Reservation.query.filter_by(acctId=account.id).order_by(Reservation.resDate, Reservation.resTime).all()
-	print(reservations)
 
-	return render_template('change.html', form=form, blocks=blocks, reservations=reservations, acct=account.name, title=account.title)
+	return render_template('change.html', form=form, blocks=blocks, account=account)
 
 
 @main.route('/addreservation', methods=['POST'])
 def addreservation():
 	"""add reservation"""
 	try:
-		print("add reservation")
 		acctName = request.cookies.get("Account")
 		account = Account.query.filter_by(name=acctName).first()
 		acctId = account.id
@@ -128,7 +115,6 @@ def addreservation():
 		res.firstName = first
 		res.lastName = last
 		res.phone = phone
-		print(res)
 		db.session.add(res)
 		db.session.commit()
 		return jsonify(success=True, id=res.id), 200
@@ -176,27 +162,47 @@ def delreservation(id):
 		db.session.rollback()
 		return jsonify(success=False), 400
 
-@main.route('/getreservations/<date>', methods=['GET'])
-def getreservations(date):
+@main.route('/getreservations/<id>', methods=['GET'])
+def getreservations(id):
 	try:
-		print("reservation date: ", date)
-		acctName = request.cookies.get("Account")
-		account = Account.query.filter_by(name=acctName).first()
-		acctId = account.id
-		reservations = Reservation.query.filter_by(resDate=date, acctId=acctId).all()
-		resList = []
-		for r in reservations:
-			e = {"id": r.id, "date": r.resDate, "time": r.resTime, "duration": r.duration, "pilot": r.pilot, "note": r.note}
-			resList.append(e)
-		print(resList)
+		block = Block.query.filter_by(id=id).first()
+		bDate = block.blkDate
+		bAcctId = block.acctId
 
-		jsondata = jsonify(results = resList)
-		return jsondata
+		reservations = Reservation.query.filter_by(resDate=bDate, acctId=bAcctId).all()
+		resTimeList = []
+		if reservations is not None:
+			resTimeList = [x.resTime for x in reservations]
+
+		jsonData = jsonify(times=resTimeList)
+		return jsonData
 
 	except exc.SQLAlchemyError as e:
 		print("exception getting reservations: ", e, flush=True)
 		return jsonify(success=False), 400
 
+@main.route('/findreservation', methods=['POST'])
+def findreservation():
+
+	try:
+		first = request.json.get('first')
+		last = request.json.get('last')
+		acctId = request.json.get('acctId')
+		today = date.today()
+
+		reservation = Reservation.query.filter(Reservation.firstName==first, Reservation.lastName==last, Reservation.acctId==acctId, Reservation.resDate >= today).first()
+
+		if reservation is not None:
+			jsonData = jsonify(id = reservation.id, phone=reservation.phone, resDate = reservation.resDate, resTime = reservation.resTime)
+			return jsonData
+		
+		else:
+			jsonData = jsonify(id = 0)
+			return jsonData
+		
+	except exc.SQLAlchemyError as e:
+		print("exception finding reservation:", e, flush=True)
+		return jsonify(success=False, id=0), 400
 
 @main.route("/admin")
 @main.route("/admin/<acct>")
@@ -217,7 +223,6 @@ def admin(acct=None):
 		resp = make_response(render_template('admin.html', acct=account.name, title=account.title))
 
 	resp.set_cookie('Account', nameCookie, path="/", max_age=timedelta(days=400))
-	print("admin - set acct cookie", nameCookie)
 	return resp
 
 
@@ -225,12 +230,11 @@ def admin(acct=None):
 def showlist():
 	acctName = request.cookies.get("Account")
 	account = Account.query.filter_by(name=acctName).first()
-	print(acctName, account)
 	form = ScheduleForm
 	blocks = Block.query.filter_by(acctId=account.id).order_by(Block.blkDate).all()
 	reservations = Reservation.query.filter_by(acctId=account.id).order_by(Reservation.resDate, Reservation.resTime).all()
 
-	return render_template('showlist.html', form=form, blocks=blocks, reservations=reservations, acct=account.name, title=account.title)
+	return render_template('showlist.html', form=form, blocks=blocks, reservations=reservations, acct=account.name, title=account.title, blocksize=account.blockSize)
 
 @main.route("/blocks")
 def blocks():
@@ -239,12 +243,11 @@ def blocks():
 	form = ScheduleForm
 	blocks = Block.query.filter_by(acctId=account.id).order_by(Block.blkDate).all()
 
-	return render_template('setblock.html', form=form, blocks=blocks, acct=account.name, title=account.title)
+	return render_template('setblock.html', form=form, blocks=blocks, acct=account.name, title=account.title, blocksize=account.blockSize)
 	
 @main.route("/addblock", methods=['POST'])
 def addblock():
 	try:
-		print("add block")
 		acctName = request.cookies.get("Account")
 		account = Account.query.filter_by(name=acctName).first()
 		acctId = account.id
@@ -256,10 +259,9 @@ def addblock():
 		blk.acctId = acctId
 		blk.blkDate = date
 		blk.resTime = date
-		blk.duration = blkDuration
+		blk.duration = account.blockSize
 		blk.startTime = time
 		blk.numBlocks = count
-		print(blk)
 		db.session.add(blk)
 		db.session.commit()
 		return jsonify(success=True, id=blk.id), 200
@@ -272,10 +274,24 @@ def addblock():
 @main.route("/delblock", methods=['POST'])
 def delblock():
 	try:
-		id = request.json.get('id')
-		print("del block", id)
-		Block.query.filter_by(id=id).delete()
+		blkId = request.json.get('id')
+		block = Block.query.filter_by(id=blkId).first()
+		blkDate = block.blkDate
+		reservations = Reservation.query.filter_by(acctId=block.acctId, resDate=block.blkDate).all()
+		idList = []
+		for r in reservations:
+			resTime = r.resTime
+			startTime = block.startTime
+			endTime = startTime + block.duration * block.numBlocks
+			if resTime > startTime and resTime < endTime:
+				idList.append(r.id)
+
+		for id in idList:
+			Reservation.query.filter_by(id=id).delete()
+
+		Block.query.filter_by(id=blkId).delete()
 		db.session.commit()
+
 		return jsonify(success=True), 200
 	except exc.SQLAlchemyError as e:
 		print("exception deleting block: ", e, flush=True)
@@ -288,15 +304,11 @@ def checkpw(acct, pw):
 		acctName = request.cookies.get("Account")
 		account = Account.query.filter_by(name=acctName).first()
 		OK = (pw == account.pw)
-		print(acctName, account.name, account.pw, OK)
 		if OK:
-			print("OK", OK)
 			return jsonify(success=True), 200
 		else:
-			print("not OK", OK)
 			return jsonify(success=False), 400
 
 	except exc.SQLAlchemyError as e:
-		print("exception checking PW: ", e, flush=True)
 		db.session.rollback()
 		return jsonify(success=False), 400

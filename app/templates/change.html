@@ -3,7 +3,7 @@
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Tithing Declaration</title>
+	<title>Schedule Change</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
@@ -15,8 +15,7 @@
 		</div>
 		<div id="content">
 			<div class="instruction">
-				<!-- <p>Enter your name to bring up your reservation for tithing declaration.  Then you can select a different date, and time.   -->
-				<p>Enter your name to bring up your reservation for ministering interview.  Then you can select a different date, and time.  
+				<p>Enter your name to bring up your reservation.  Then you can select a different date, and time.  
 						Press Save to finish the reservaton.</p>
 				<p>Times with a gray background are already reserved. </p>
 			</div>
@@ -35,7 +34,7 @@
 			</div>
 			<div id="sched-date">
 				<div id="date-div">
-					<label for="avail-date">Date:</label>
+					<label for="avail-date">Click to Select Date:</label>
 					<select name="avail-date" id="avail-date" onchange="dateChange()"></select>
 				</div>
 				<div id="sched-times">
@@ -56,15 +55,18 @@
 	const lastNameField = document.getElementById("last-name");
 	const phoneField = document.getElementById("phone");
 	
-	let idReservationMap = new Map();
 	let blockIdDataMap = new Map();
-	let resList = [];
 	let selectedRowId = -1;
 	let resId = 0;
-	let resFound = false;
+	let resFound = false
+	let resDate = null
+	let resTime = 0
+
+
+	const accountId = {{ account.id }}
 
 	function init() {
-		const title = "{{ title }}"
+		const title = "{{ account.title }}"
 		const header = document.getElementById("title-header")
 		header.innerText = title
 
@@ -89,15 +91,6 @@
 
 		} {% endfor %}
 
-		{% for r in reservations %} {
-			const bDate = new Date("{{ r.resDate }}");
-			bDate.setTime(bDate.getTime() + 43200000);	// offset for gmt
-			const resTime = {{ r.resTime }};
-
-			const data = {id: {{ r.id }}, date: bDate, time: resTime, first: "{{ r.firstName }}", last: "{{ r.lastName }}", phone: "{{ r.phone }}"};
-			resList.push(data);
-		} {% endfor %}
-
 		firstNameField.value = getCookie("firstName");
 		lastNameField.value = getCookie("lastName");
 		phoneField.value = getCookie("phone");
@@ -107,57 +100,70 @@
 	}
 
 	function dateChange() {
-		const data = blockIdDataMap.get(dateField.value);
-		const date = data.date;
-		const tblBody = document.getElementById("times-tbl");
-		const startTime = data.start;
-	
-		let resTimeInfoMap = new Map();
+		const blockId = dateField.value
+		let url = "{{ url_for('.getreservations', id='idTag') }}";
+		url = url.replace('idTag', blockId);
 
-		for (let r of resList) {
-			if ((date.getTime() == r.date.getTime()) && (r.time >= data.start) && (r.time < data.start + data.duration * data.nTimes)) {
-				let info = r.first + " " + r.last + " (" + r.phone + ")";
-				resTimeInfoMap.set(r.time, info);
+		fetch(url)
+		.then(resp => {
+			if (resp.ok) {
+				return resp.json()
 			}
-		}
+		})
+		.then(json => {
+			const timeList = json.times
+			const data = blockIdDataMap.get(dateField.value);
 
-		tblBody.innerHTML = "";
-		selectedRowId = -1;
+			const tblBody = document.getElementById("times-tbl")
+			tblBody.innerHTML = "";
+			selectedRowId = -1;
 
-		for (let i = 0; i < data.nTimes; i++) {
-			const row = tblBody.insertRow(i);
-			row.className = "tr-not-selected";
-			const block = row.insertCell(0);
-			const time = data.start + data.duration * i;
-			let hr = Math.floor(time / 60) % 12;
-			if (hr == 0) {
-				hr = 12;
-			}
-			let min = (time % 60).toString();
-			if (min == "0") {
-				min = "00";
-			}
-			const ap = (~~(time / 60) > 11) ? "PM" : "AM";
-			const timeStr = hr + ":" + min + " " + ap;
-			block.innerHTML = timeStr;
-			if (resTimeInfoMap.has(time)) {
-				row.className = "tr-scheduled";
-			} else {
-				row.onclick = function () {
-					const rowId = this.rowIndex;
-					if (selectedRowId >= 0) {
-						tblBody.rows[selectedRowId].className = "tr-not-selected";
-					}
-					const selected = tblBody.getElementsByTagName('tr')[rowId];
-					selected.className = "tr-selected";
-					selectedRowId = rowId;
+			for (let i = 0; i < data.nTimes; i++) {
+				const row = tblBody.insertRow(i);
+				row.className = "tr-not-selected";
+				const block = row.insertCell(0);
+				const time = data.start + data.duration * i;
+				let hr = Math.floor(time / 60) % 12;
+				if (hr == 0) {
+					hr = 12;
 				}
-			}
+				let min = (time % 60).toString();
+				if (min == "0") {
+					min = "00";
+				}
+				const ap = (~~(time / 60) > 11) ? "PM" : "AM";
+				const timeStr = hr + ":" + min + " " + ap;
+				block.innerHTML = timeStr;
 
-			const value = row.insertCell(1);
-			value.innerHTML = time;
-			value.style.display = "none";
-		}
+				if (timeList.includes(time)) {
+					const val = findValFromDateTime(resDate, resTime)
+
+					if ((dateField.value == val) && (time == resTime)) {
+						row.className = "tr-selected"
+						selectedRowId = i
+					} else {
+						row.className = "tr-scheduled";
+					}
+				} else {
+						row.onclick = function () {
+							const rowId = this.rowIndex;
+							if (selectedRowId >= 0) {
+								tblBody.rows[selectedRowId].className = "tr-not-selected";
+							}
+							const selected = tblBody.getElementsByTagName('tr')[rowId];
+							selected.className = "tr-selected";
+							selectedRowId = rowId;
+						}
+					}
+
+					const value = row.insertCell(1);
+					value.innerHTML = time;
+					value.style.display = "none";
+				}
+			})
+		.catch(err => {
+			alert("Get reservation failed: ", err)
+		})
 	}
 
 	function modReservation() {
@@ -174,7 +180,6 @@
 		setCookie("phone", phone, daysToMinutes(30));
 		
 		// date, time, first, last, phone) {
-		console.log("mod res id", resId)
 		const jsonString = JSON.stringify({ id: resId, resdate: date, restime: time, first: first, last: last, phone: phone });
 		const url = "{{ url_for('.modreservation') }}";
 
@@ -203,16 +208,13 @@
 	}
 
 	function findValFromDateTime (date, time) {
-		console.log(date, time)
 		for (const b of blockIdDataMap.values()) {
-			console.log(b)
 			if ((b.date.getTime() == date.getTime()) && (time >= b.start) && (time < b.start  + b.duration * b.nTimes)) {
-				console.log(b.date, b.start, b.duration, b.nTimes)
 				return b.id;
 			}
 		}
 
-		return "";
+		return 0;
 	}
 
 	function checkDone() {
@@ -227,35 +229,56 @@
 		const timeTable = document.getElementById("times-tbl");
 		const schedDiv = document.getElementById("sched-date");
 
-		console.log(first, last)
+		console.log("checkDone()")
 		if (!resFound && (first != "") && (last != "")) {
-			for (let t of resList) {
-				if ((t.first.toLowerCase() == first.toLowerCase()) &&
-						(t.last.toLowerCase() == last.toLowerCase())) {
-					console.log(t.date, t.time)
+
+			const jsonString = JSON.stringify({ first: first, last: last, acctId: accountId });
+			const url = "{{ url_for('.findreservation') }}";
+
+			fetch(url, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: jsonString
+			})
+			.then(resp => {
+				console.log(".then(resp)", resp)
+				if (resp.ok) {
+					return resp.json()
+				}
+			})
+			.then(json => {
+				id = json.id
+				if (id != 0) {
+					const phone = json.phone
+					let rd = json.resDate
+					rd = rd.replace("00:00:00", "12:00:00")
+					resDate = new Date(rd)
+					resTime = json.resTime
+
 					resFound = true;
-					phoneField.value = t.phone;
+					phoneField.value = phone;
 					subBtn.style.display = "flex";
 					delBtn.style.display = "flex";
 					schedDiv.style.display = "flex";
-					firstField.value = t.first;
-					lastField.value = t.last;
+					firstField.value = first;
+					lastField.value = last;
 					// firstField.disabled = true;
 					// lastField.disabled = true;
-					const val = findValFromDateTime(t.date, t.time);
-					console.log(val)
+					const val = findValFromDateTime(resDate, resTime);
 					if (val != "") {
 						dateField.value = val;
-						resId = t.id;
+						resId = id;
 						dateChange();
-						highlightTime(t.time);
-						break;
+						highlightTime(resTime);
 					} else {
 						alert("Reservation not found");
-						break;
 					}
 				}
-			}
+			})
+			.catch(err => {
+				console.log("catch", err)
+				alert("Find reservation failed: ", err)
+			})
 		// } else {
 		// 	subBtn.style.display = "none";
 		// 	delBtn.style.display = "none";

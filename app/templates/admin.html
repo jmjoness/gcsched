@@ -3,7 +3,7 @@
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Tithing Declaration Admin</title>
+	<title>Scheduling Admin</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
@@ -12,10 +12,11 @@
 	<div id="page">
 		<div id="header">
 			<h2 id="title-header">Administration</h2>
+			<input type="button" class="hdr-button" value="Exit" onclick="exitClick()">
 		</div>
 		<div id="main-page">
-			<input type="button" id="show-button" class="sel-button" value= "Show List" onclick="showlist()">
 			<input type="button" id="blocks-button" class="sel-button" value= "Set Blocks" onclick="setBlocks()">
+			<input type="button" id="show-button" class="sel-button" value= "Show List" onclick="showlist()">
 		</div>
 	</div>
 </html>
@@ -76,6 +77,12 @@
 	function setBlocks() {
 		let str = "{{ url_for('.blocks') }}";
 		window.location = str;
+	}
+
+	function exitClick() {
+		let url = "{{ url_for('main.index', acct='acctTag') }}"
+		url = url.replace('acctTag', "{{ acct }}")
+		location.href = url
 	}
 
 </script>

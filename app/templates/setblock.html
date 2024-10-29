@@ -3,7 +3,7 @@
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Tithing Declaration</title>
+	<title>Schedule Block</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
@@ -12,7 +12,7 @@
 	<div id="page">
 		<div id="header">
 			<h2 id="title-header">Make Time Block</h2>
-			<input type="button" id="home-button" class="end-button" onclick="goHome()" value="Home">
+			<input type="button" id="home-button" class="hdr-button" onclick="goHome()" value="Home">
 		</div>
 		<div id="content-block">
 			<div id="sched-times">
@@ -37,7 +37,7 @@
 			<div id="add-controls">
 				<div class="entry-div">
 					<label for="start-date">Start Date:</label>
-					<input type="date" id="start-date" min="2024-05-15" max="2024-08-31">
+					<input type="date" id="start-date" min="2024-10-01" max="2026-12-31">
 				</div>
 				<div class="entry-div">
 					<label for="start-time">Start Time:</label>
@@ -60,6 +60,7 @@
 <script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
+	let blkDuration = {{ blocksize }}
 
 	let blocks = []
 
@@ -144,6 +145,14 @@
 
 	function addBlock() {
 		document.getElementById("add-controls").style.display = "flex";
+		const startField = document.getElementById("start-time")
+		const endField = document.getElementById("end-time")
+		let date = new Date()
+		let hrs = date.getUTCHours()
+		let diff = date.getTimezoneOffset()
+		hrs -= (diff / 60)
+		startField.value = hrs.toString() + ":00"
+		endField.value = (hrs + 2).toString() + ":00"
 	}
 
 	function delBlock() {
@@ -154,7 +163,6 @@
 		const jsonString = JSON.stringify({ id: id });
 		const url = "{{ url_for('.delblock') }}";
 
-		console.log(id, jsonString)
 		fetch(url, {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
@@ -195,7 +203,6 @@
 		let timeVal = timeStrToInt(startTime);
 		let count = Math.floor((timeStrToInt(endTime) - timeVal) / blkDuration);
 
-		console.log(startDate, startTime, endTime, timeVal, count)
 		const jsonString = JSON.stringify({ date: startDate, time: timeVal, count: count });
 		const url = "{{ url_for('.addblock') }}";
 

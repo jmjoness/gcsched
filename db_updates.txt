@@ -3,5 +3,6 @@ insert into account (id, name, pw, title) values (1, "tithing", "juubun", "Tithi
 insert into account (id, name, pw, title) values (2, "mv1", "minister", "Ministering Interviews");
 alter table reservation add column acctid int not null after id;
 alter table block add column acctid int not null after id;
+alter table account add column blocksize int;
 update block set acctid = 1;
 update reservation set acctid = 1;

@@ -3,7 +3,7 @@
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Tithing Declaration</title>
+	<title>Gold Canyon Scheduling</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleschedule.css') }}">
@@ -11,8 +11,8 @@
 <body onload="init()">
 	<div id="page">
 		<div id="header">
-			<!-- <h2>Gold Canyon Ward Tithing Declaration</h2> -->
 			<h2 id="title-header">Ministering Interviews</h2>
+			<input type="button" class="hdr-button" value="Admin" onclick="adminClick()">
 		</div>
 		<div id="main-page">
 			<input type="button" id="sched-button" class="sel-button" value= "Reserve Time" onclick="schedule()">
@@ -38,6 +38,13 @@
 	function change() {
 		let str = "{{ url_for('.change') }}";
 		window.location = str;
+	}
+
+	function adminClick() {
+		// const acct = getCookie('Account')
+		let url = "{{ url_for('main.admin', acct='acctTag') }}"
+		url = url.replace('acctTag', "{{ acct }}")
+		location.href = url
 	}
 
 </script>
