@@ -44,8 +44,12 @@
 					<input type="time" id="start-time">
 				</div>
 				<div class="entry-div">
+					<label for="num-res">Number of Reservations:</label>
+					<input type="number" id="num-res" oninput="numberChange()">
+				</div>
+				<div class="entry-div">
 					<label for="end-time">End Time:</label>
-					<input type="time" id="end-time">
+					<input type="time" id="end-time" readonly>
 				</div>
 				<div id="buttons-div">
 					<input type="button" id="save-button" class="end-button" onclick="saveBlock()" value="Save">
@@ -139,8 +143,31 @@
 				selected.className = "tr-selected";
 				selectedRowId = rowId;
 				document.getElementById("del-button").disabled = false;
+				numberChange()
 			}
+		}
 	}
+
+	function minutesToTimeString(mins) {
+		let hrStr = Math.floor(mins / 60).toString()
+		let mnStr = (mins % 60).toString()
+		if (mnStr.length == 1) {
+			mnStr = "0" + mnStr
+		}
+
+		const timeStr = hrStr + ":" + mnStr
+		return timeStr
+	}
+
+	function numberChange() {
+		const numFld = document.getElementById("num-res")
+		const startFld = document.getElementById("start-time")
+		const endFld = document.getElementById("end-time")
+		const val = numFld.value
+		const startMins = timeStrToInt(startFld.value)
+		const endMins = startMins + val * blkDuration
+
+		endFld.value = minutesToTimeString(endMins)
 	}
 
 	function addBlock() {
@@ -153,6 +180,7 @@
 		hrs -= (diff / 60)
 		startField.value = hrs.toString() + ":00"
 		endField.value = (hrs + 2).toString() + ":00"
+		numberChange()
 	}
 
 	function delBlock() {
