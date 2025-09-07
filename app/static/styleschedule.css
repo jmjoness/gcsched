@@ -13,6 +13,19 @@ label {
 	font-size: 24px;
 }
 
+h3 {
+	font-size: large;
+	text-align: left;
+	margin-left: 60px;
+}
+
+p {
+	font-size: medium;
+	margin-left: 80px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
 #page {
 	display: flex;
 	flex-flow: column;
@@ -37,6 +50,15 @@ label {
 	margin-top: 10px;
 	margin-left: 50px;
 	width: 100px;
+}
+
+#help-content {
+	display: flex;
+	flex-flow: column;
+	justify-content: flex-start;
+	align-items: left;
+	background-color: #c0c0ff;
+	width: 100%;
 }
 
 #content {
@@ -124,7 +146,7 @@ td {
 }
 
 .tr-scheduled {
-	background-color: #c0c0c0;
+	background-color: #c00000;
 }
 
 #sched-div {
@@ -196,7 +218,7 @@ td {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
-	align-items: left;
+	/* align-items: left; */
 	margin: 20px auto;
 	gap: 10px;
 

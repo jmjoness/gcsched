@@ -13,6 +13,7 @@
 		<div id="header">
 			<h2 id="title-header">Ministering Interviews</h2>
 			<input type="button" class="hdr-button" value="Admin" onclick="adminClick()">
+			<a href="{{ url_for('.help') }}" target="_blank"><img src="/static/help.svg" width="30" height="30"></a>
 		</div>
 		<div id="main-page">
 			<input type="button" id="sched-button" class="sel-button" value= "Reserve Time" onclick="schedule()">
@@ -22,7 +23,6 @@
 </html>
 
 <script type="text/javascript">
-	
 
 	function init() {
 		const title = "{{ title }}"

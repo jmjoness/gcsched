@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Help</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body >
+	<div id="page">
+		<div id="header">
+			<h2 id="title-header">Help</h2>
+			<!-- <input type="button" id="home-button" class="hdr-button" onclick="goHome()" value="Home"> -->
+		</div>
+		<div id="help-content">
+			<h3>Create Reservation Block:</h3>
+			<p>Open a browser and go to  "gcsched.smarterplot.com/<your account>"</p>
+			<p>click the Admin button
+			<p>Enter "minister" for the password
+			<p>Click on Set Blocks
+			<p>Click on Add
+			<p>Enter the date for appointments
+			<p>Enter start time and number of reservations
+			<p>For example:  4:00 pm, and 4 make 4 reservation blocks starting at 4:00, 4:30. 5:00 and 5:30
+			<p>Click on Save
+			<p>You will see the blocks that are currently available
+			<p>Click on Home to leave
+			<p>To see the blocks that have been created click on Set Blocks
+
+			<h3>Show Reserved Times</h3>
+			<p>To see a list of people that have reserved times, click on Show List and select a date
+
+			<h3>For a member to reserve time:</h3>
+			<p>Click on Reserve Time
+			<p>Enter name and phone, select a date from the list of available dates, and select a time, then click on Save
+
+			<h3>To change a time:</h3>
+			<p>Click on Change Time
+			<p>Enter name and phone
+			<p>The reservation should be displayed
+			<p>Select a different date and/or time and click on Save
+		</div>
+	</div>
+</body>
+</html>
+
+<script src="/static/cookie.js"></script>
+<script src="/static/dates.js"></script>
+<script >
+
+</script>

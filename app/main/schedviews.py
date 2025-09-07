@@ -225,7 +225,6 @@ def admin(acct=None):
 	resp.set_cookie('Account', nameCookie, path="/", max_age=timedelta(days=400))
 	return resp
 
-
 @main.route("/showlist")
 def showlist():
 	acctName = request.cookies.get("Account")
@@ -312,3 +311,9 @@ def checkpw(acct, pw):
 	except exc.SQLAlchemyError as e:
 		db.session.rollback()
 		return jsonify(success=False), 400
+
+@main.route("/help")
+def help():
+	form = ScheduleForm
+
+	return render_template('help.html', form=form)

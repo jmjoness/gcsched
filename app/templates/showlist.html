@@ -13,6 +13,7 @@
 		<div id="header">
 			<h2 id="title-header">Show Reservations</h2>
 			<input type="button" id="home-button" class="hdr-button" onclick="goHome()" value="Home">
+			<a href="{{ url_for('.help') }}" target="_blank"><img src="/static/help.svg" width="30" height="30"></a>
 		</div>
 		<div id="content">
 			<div id="sched-date">
@@ -26,7 +27,10 @@
 
 				</table>
 			</div>
-		</div>
+			<div id="buttons-div">
+				<input type="button" id="rmv-button" class="end-button" onclick='remove()' value="Remove">
+			</div>
+</div>
 	</div>
 </html>
 
@@ -42,6 +46,7 @@
 		const title = "{{ title }}"
 		const header = document.getElementById("title-header")
 		header.innerText = "Reservations - " + title
+		document.getElementById("rmv-button").style.display = "none";
 
 		{% for b in blocks %} {
 			const bDate = new Date("{{ b.blkDate }}");
@@ -83,6 +88,9 @@
 
 	function dateChange() {
 		const data = blockIdDataMap.get(dateField.value);
+		if (data == null) {
+			return
+		}
 		const date = data.date;
 		const tblBody = document.getElementById("times-tbl");
 	
@@ -90,13 +98,16 @@
 
 		for (let r of resList) {
 			if ((date.getTime() == r.date.getTime()) && (r.time >= data.start) && (r.time < data.start + data.duration * data.nTimes)) {
-				let info = r.first + " " + r.last + " (" + phoneFormat(r.phone) + ")";
+				const str = r.first + " " + r.last + " (" + phoneFormat(r.phone) + ")"
+				const id = r.id
+				const info = {str: str, id: id}
 				resTimeInfoMap.set(r.time, info);
 			}
 		}
 
-		tblBody.innerHTML = "";
-		selectedRowId = -1;
+		tblBody.innerHTML = ""
+		selectedRowId = -1
+		selectedResId = -1
 
 		for (let i = 0; i < data.nTimes; i++) {
 			const row = tblBody.insertRow(i);
@@ -118,13 +129,48 @@
 			const name = row.insertCell(1);
 
 			if (resTimeInfoMap.has(time)) {
-				name.innerText = resTimeInfoMap.get(time);
+				const info = resTimeInfoMap.get(time)
+				name.innerText = info.str
+				row.onclick = function() {
+					const rowId = this.rowIndex;
+					if (selectedRowId >= 0) {
+						tblBody.rows[selectedRowId].className = "tr-not-selected";
+					}
+					const selected = tblBody.getElementsByTagName('tr')[rowId];
+					selected.className = "tr-selected";
+					selectedRowId = rowId;
+					selectedResId = info.id
+					document.getElementById("rmv-button").style.display = "flex";
+				}
 			}
 
 			const value = row.insertCell(1);
 			value.innerHTML = time;
 			value.style.display = "none";
 		}
+	}
+
+	function remove() {
+		console.log("remove row", selectedRowId, selectedResId)
+		const jsonString = JSON.stringify({ id: selectedResId });
+		let url = "{{ url_for('.delreservation', id='idTag') }}";
+		url = url.replace('idTag', selectedResId);
+
+		fetch(url)
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Delete reservation failed");
+				return;
+			}
+
+			resp.json().then(json => {
+				alert("The reservation has been deleted");
+				location.reload()
+			})
+		})
+		.catch(err => {
+			alert("Delete reservation failed: ", err);
+		});
 	}
 
 	function goHome() {

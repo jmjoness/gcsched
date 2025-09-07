@@ -1,0 +1,9 @@
+<svg class="svg-icon" style="stroke: white; fill: white; overflow: hidden;" viewBox="0 0 1000 1000" version="1.1" xmlns="http://www.w3.org/2000/svg">
+<style>
+	.norm {
+		font: bold 800px sans-serif;
+	}
+</style>
+<circle cx="500" cy="500" r="450" stroke="white" fill="none" stroke-width="80" />
+<text x="250" y="800" class="norm">?</text>
+</svg>

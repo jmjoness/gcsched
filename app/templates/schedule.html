@@ -12,6 +12,7 @@
 	<div id="page">
 		<div id="header">
 			<h2 id="title-header">Schedule 2024</h2>
+			<a href="{{ url_for('.help') }}" target="_blank"><img src="/static/help.svg" width="30" height="30"></a>
 		</div>
 		<div id="content">
 			<div class="instruction">
@@ -52,13 +53,48 @@
 <script src="/static/dates.js"></script>
 <script >
 	const dateField = document.getElementById("avail-date");
-	
+	const phoneField = document.getElementById("phone")
+
 	let blockIdDataMap = new Map();
 	let selectedRowId = -1;
 	let exiting = false
 
 	const accountId = {{ account.id }}
 	const title = "{{ account.title }}"
+
+	function insertChar(str, index, value) {
+		return str.substr(0, index) + value + str.substr(index)
+	}
+
+	phoneField.addEventListener('keydown', function(e) {
+		if ((e.key != 'Backspace') && (e.key != 'Delete') && (e.key != 'ArrowLeft') && (e.key != 'ArrowRight') && (e.key != 'Tab'))
+			e.preventDefault()
+		let str = phoneField.value
+		if ((e.key >= "0") && (e.key <= "9") && (str.length < 12)) {
+			let pos = phoneField.selectionStart
+			if (pos == str.length) {
+				str += e.key
+			} else {
+				str = insertChar(str, pos, e.key)
+			}
+			str = str.replaceAll("-", "")
+			if (str.length > 2) {
+				str = insertChar(str, 3, "-")
+				if (pos == 2)
+					pos++
+			}
+			if (str.length > 6) {
+				str = insertChar(str, 7, "-")
+				if (pos == 6)
+					pos++
+			}
+			phoneField.value = str
+			pos++
+			phoneField.selectionStart = pos
+			phoneField.selectionEnd = pos
+		}
+	})
+
 
 	function init() {
 		const header = document.getElementById("title-header")
