@@ -297,6 +297,36 @@ def delblock():
 		db.session.rollback()
 		return jsonify(success=False), 400
 
+@main.route("/acctedit")
+def acctedit():
+	acctName = request.cookies.get("Account")
+	account = Account.query.filter_by(name=acctName).first()
+	form = ScheduleForm
+	blocks = Block.query.filter_by(acctId=account.id).order_by(Block.blkDate).all()
+
+	return render_template('account.html', form=form, acct=account.name, title=account.title, password=account.pw, blocksize=account.blockSize)
+	
+@main.route("/setaccount", methods=['POST'])
+def setaccount():
+	try:
+		acctName = request.cookies.get("Account")
+		account = Account.query.filter_by(name=acctName).first()
+		acctId = account.id
+		title = request.json.get('title')
+		password = request.json.get('password')
+		blockSize = request.json.get('blockSize')
+
+		account.title = title
+		account.password = password
+		account.blockSize = blockSize
+		db.session.commit()
+		return jsonify(success=True, id=acctId), 200
+
+	except exc.SQLAlchemyError as e:
+		print("exception setting account: ", e, flush=True)
+		db.session.rollback()
+		return jsonify(success=False), 400
+	
 @main.route("/checkpw/<acct>/<pw>")
 def checkpw(acct, pw):
 	try:

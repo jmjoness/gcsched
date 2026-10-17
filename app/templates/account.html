@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Account</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<link rel="stylesheet" href="{{ url_for('static', filename='styleschedule.css') }}">
+</head>
+<body onload="init()">
+	<div id="page">
+		<div id="header">
+			<h2 id="title-header">Make Time Block</h2>
+			<input type="button" id="home-button" class="hdr-button" onclick="goHome()" value="Home">
+			<a href="{{ url_for('.help') }}" target="_blank"><img src="/static/help.svg" width="30" height="30"></a>
+		</div>
+		<div id="content-block">
+			<div id="add-controls">
+				<div class="entry-div">
+					<label for="title-text">Title:</label>
+					<input type="text" id="title-text" maxlength="32">
+				</div>
+				<div class="entry-div">
+					<label for="password-text">Password:</label>
+					<input type="text" id="password-text" maxlength="32">
+				</div>
+				<div class="entry-div">
+					<label for="block-size-select">Block Size:</label>
+                    <select id="block-size-select" size="8">
+                        <option value="5">5 min</option>
+                        <option value="6">6 min</option>
+                        <option value="10">10 min</option>
+                        <option value="12">12 min</option>
+                        <option value="15">15 min</option>
+                        <option value="20">20 min</option>
+                        <option value="30">30 min</option>
+                        <option value="60">1 hour</option>
+                    </select>
+				</div>
+				<div id="buttons-div">
+					<input type="button" id="save-button" class="end-button" onclick="saveAccount()" value="Save">
+					<input type="button" id="cancel-button" class="end-button" onclick="cancel()" value="Cancel">
+				</div>
+			</div>
+		</div>
+	</div>
+</html>
+
+<script src="/static/cookie.js"></script>
+<script src="/static/dates.js"></script>
+<script >
+	const titleText = document.getElementById("title-text")
+	const passwordText = document.getElementById("password-text")
+	const blockSelect = document.getElementById("block-size-select")
+
+	function init() {
+		const title = "{{ title }}"
+        const pw = "{{ password }}"
+        const blockSize = "{{ blocksize }}"
+		const header = document.getElementById("title-header")
+		header.innerText = title + " Account"
+
+        titleText.value = title
+        passwordText.value = pw
+        blockSelect.value = blockSize
+	}
+
+	function numberChange() {
+		const numSel = document.getElementById("block-size-select")
+		const val = numSel.value
+
+	}
+
+	function saveAccount() {
+		const title = titleText.value
+		const password = passwordText.value
+		const blockSizeStr = blockSelect.value
+		const blockSize = parseInt(blockSizeStr)
+
+		const jsonString = JSON.stringify({ title: title, password: password, blockSize: blockSize})
+		const url = "{{ url_for('.setaccount') }}"
+
+		fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: jsonString
+		})
+		.then(resp => {
+			if (!resp.ok) {
+				alert("Set account failed")
+				return
+			}
+
+			resp.json().then(json => {
+				alert("Account settings have been changed")
+				goHome()
+			})
+		})
+		.catch(err => {
+			alert("Set account failed: ", err)
+		});
+	}
+
+	function cancel() {
+		document.getElementById("add-controls").style.display = "none"
+	}
+
+	function goHome() {
+		// window.location = "{{ url_for('.admin')}}";
+		const acct = getCookie('Account')
+		let url = "{{ url_for('main.admin', acct='acctTag') }}"
+		url = url.replace('acctTag', acct)
+		location.href = url
+	}
+
+</script>
