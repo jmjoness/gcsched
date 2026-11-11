@@ -1,4 +1,4 @@
 *.pyc
 *.config
-record.log
-
+*.DS_Store
+*.log

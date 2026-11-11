@@ -15,13 +15,25 @@ class Config:
 class DevelopmentConfig(Config):
 	# on desktop
 	MYSQL = {
+	'user': 'root',
+	'pw': 'trees',
+	'db': 'gcsched',
+	'host': 'localhost',
+	'port': '3306'
+	}
+	SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://%(user)s:%(pw)s@%(host)s/%(db)s' % MYSQL
+	DEBUG = True
+
+class DevelopmentMacConfig(Config):
+	# on desktop
+	MYSQL = {
 	'user': 'trees',
 	'pw': 'trees',
 	'db': 'gcsched',
 	'host': 'localhost',
 	'port': '3306'
 	}
-	SQLALCHEMY_DATABASE_URI = 'mysql://%(user)s:%(pw)s@%(host)s/%(db)s' % MYSQL
+	SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://%(user)s:%(pw)s@%(host)s/%(db)s' % MYSQL
 	DEBUG = True
 
 class LinuxConfig(Config):
@@ -49,6 +61,7 @@ class ProductionConfig(Config):
 
 config = {
 	'development': DevelopmentConfig,
+	'devmac': DevelopmentMacConfig,
 	'linuxconfig': LinuxConfig,
 	'production': ProductionConfig,
 }

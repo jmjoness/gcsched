@@ -1,0 +1,19 @@
+-- how to run flask server locally on mac
+
+mysql 
+source ~/work/gcenv/gcsched.sql
+-- create account
+insert into account(name, pw, title, blocksize) values ("rm1", "minister", "RS Minister 1", 15);
+quit
+
+python -m venv gcenv
+pip install -r requirements.txt
+
+source gcenv/bin/activate
+
+python manage.py runserver
+
+-- on browser 
+http://localhost:5000/<name of account>
+
+deactivate
